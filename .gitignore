@@ -1,0 +1,13 @@
+node_modules/
+Files/
+coverage/
+.DS_Store
+*.log
+
+# Never commit real Codex or MCP credentials.
+auth.json
+.credentials.json
+codex_auth.age
+mcp_oauth.age
+profile-home/
+staging/
