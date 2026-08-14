@@ -94,6 +94,18 @@ test("renaming changes only profile metadata", (t) => {
   assert.equal(fs.readFileSync(store.authPath(initialized.imported.id), "utf8"), authBefore);
 });
 
+test("profile avatars are stored per account with private canonical files", (t) => {
+  const fixture = tempEnvironment();
+  t.after(() => fixture.cleanup());
+  writeJson(path.join(fixture.codexHome, "auth.json"), fakeAuth("account-1", "first@example.test"));
+  const store = new ProfileStore(fixture.env);
+  const profile = store.initialize("First").imported;
+  const avatarPath = store.saveAvatar(profile.id, { bytes: Buffer.from([1, 2, 3]), extension: "png" });
+  assert.equal(avatarPath, path.join(fixture.profileHome, "profiles", profile.id, "avatar.png"));
+  assert.deepEqual(fs.readFileSync(avatarPath), Buffer.from([1, 2, 3]));
+  if (process.platform !== "win32") assert.equal(fs.statSync(avatarPath).mode & 0o777, 0o600);
+});
+
 test("Codex username is explicit metadata and is never inferred from email", (t) => {
   const fixture = tempEnvironment();
   t.after(() => fixture.cleanup());

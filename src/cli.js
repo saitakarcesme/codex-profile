@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { ProfileStore } from "./store.js";
+import { fetchAccountAvatar } from "./avatar.js";
 import {
   codexVersion,
   configUsesFileAuth,
@@ -162,6 +163,8 @@ async function commandAdd(args, store) {
   try {
     const authFile = await loginInto(staging, { deviceCode, env: store.env });
     const profile = store.addFromAuth(authFile, label);
+    const avatar = await fetchAccountAvatar(authFile);
+    if (avatar) store.saveAvatar(profile.id, avatar);
     process.stdout.write(`Stored profile "${profile.label}" (${profile.email || profile.authMode}).\n`);
     process.stdout.write(`Activate it after closing Codex with: codex-profile use ${profile.id.slice(0, 8)}\n`);
   } finally {
@@ -196,8 +199,17 @@ async function commandReauth(args, store) {
 async function commandList(args, store) {
   const json = removeFlag(args, "--json");
   const usageRequested = removeFlag(args, "--usage");
+  const refreshAvatars = removeFlag(args, "--refresh-avatars");
   if (args.length) throw new Error(`unexpected list argument: ${args[0]}`);
-  const state = store.load();
+  let state = store.load();
+  if (refreshAvatars) {
+    for (const profile of state.profiles) {
+      if (store.avatarPath(profile.id)) continue;
+      const avatar = await fetchAccountAvatar(store.authPath(profile.id));
+      if (avatar) store.saveAvatar(profile.id, avatar);
+    }
+    state = store.load();
+  }
   const rows = profileRows(store, state);
   let usage = null;
   let usageError = null;

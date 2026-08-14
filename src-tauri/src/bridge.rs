@@ -116,7 +116,9 @@ fn avatar_data_url(path: &str) -> Option<String> {
 #[tauri::command]
 pub async fn list_profiles(bridge: State<'_, CoreBridge>) -> Result<Value, String> {
     let bridge = bridge.inner().clone();
-    let raw = tauri::async_runtime::spawn_blocking(move || bridge.execute(&["list", "--json"]))
+    let raw = tauri::async_runtime::spawn_blocking(move || {
+        bridge.execute(&["list", "--json", "--refresh-avatars"])
+    })
         .await
         .map_err(|error| format!("Codex Profile worker stopped unexpectedly: {error}"))??;
     let mut value: Value =

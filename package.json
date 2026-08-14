@@ -8,8 +8,8 @@
     "codex-profile": "bin/codex-profile.js"
   },
   "scripts": {
-    "test": "node --test test/auth.test.js test/app-server.test.js test/codex-adapter.test.js test/config.test.js test/store.test.js test/desktop.test.js test/shared-state.test.js test/ui.test.js test/cli.e2e.test.js",
-    "check": "node --check bin/codex-profile.js && node --check src/cli.js && node --check src/store.js && node --check src/desktop.js && node --check src/app-server.js && node --check src/shared-state.js && node --check src/fs-safe.js && tsc -p ui/tsconfig.json --noEmit",
+    "test": "node --test test/auth.test.js test/avatar.test.js test/app-server.test.js test/codex-adapter.test.js test/config.test.js test/store.test.js test/desktop.test.js test/shared-state.test.js test/ui.test.js test/cli.e2e.test.js",
+    "check": "node --check bin/codex-profile.js && node --check src/cli.js && node --check src/store.js && node --check src/avatar.js && node --check src/desktop.js && node --check src/app-server.js && node --check src/shared-state.js && node --check src/fs-safe.js && tsc -p ui/tsconfig.json --noEmit",
     "ui:dev": "vite --config vite.config.ts",
     "ui:build": "vite build --config vite.config.ts",
     "ui:visual-check": "node scripts/visual-check.js",

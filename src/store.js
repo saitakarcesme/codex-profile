@@ -29,6 +29,26 @@ export class ProfileStore {
     return null;
   }
 
+  saveAvatar(profileId, avatar) {
+    return withOperationLock(this.paths, () => {
+      const state = this.load();
+      const profile = this.resolve(profileId, state);
+      if (!avatar || !Buffer.isBuffer(avatar.bytes) || !["jpg", "png", "webp"].includes(avatar.extension)) {
+        throw new Error("avatar payload is invalid");
+      }
+      const directory = path.dirname(this.authPath(profile.id));
+      const destination = path.join(directory, `avatar.${avatar.extension}`);
+      atomicWrite(destination, avatar.bytes, 0o600);
+      for (const name of ["avatar.jpg", "avatar.png", "avatar.jpeg", "avatar.webp"]) {
+        const candidate = path.join(directory, name);
+        if (candidate !== destination) {
+          try { fs.unlinkSync(candidate); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+        }
+      }
+      return destination;
+    });
+  }
+
   sharedAuthPath() {
     return path.join(this.codexHome, "auth.json");
   }
