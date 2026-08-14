@@ -7,11 +7,12 @@ use tauri_plugin_autostart::ManagerExt;
 use windows_sys::Win32::{
     Foundation::{CloseHandle, HWND, LPARAM, RECT},
     System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION},
-    UI::WindowsAndMessaging::{EnumWindows, GetWindow, GetWindowRect, GetWindowThreadProcessId, IsWindowVisible, GW_OWNER},
+    UI::WindowsAndMessaging::{EnumWindows, GetWindow, GetWindowRect, GetWindowThreadProcessId, IsWindowVisible, SetForegroundWindow, GW_OWNER},
 };
 
 struct CodexWindowSearch {
     bounds: Option<RECT>,
+    handle: Option<HWND>,
 }
 
 unsafe extern "system" fn find_codex_window(hwnd: HWND, parameter: LPARAM) -> i32 {
@@ -48,17 +49,28 @@ unsafe extern "system" fn find_codex_window(hwnd: HWND, parameter: LPARAM) -> i3
     if GetWindowRect(hwnd, &mut bounds) != 0 && bounds.right > bounds.left && bounds.bottom > bounds.top {
         let search = &mut *(parameter as *mut CodexWindowSearch);
         search.bounds = Some(bounds);
+        search.handle = Some(hwnd);
         return 0;
     }
     1
 }
 
 fn codex_window_bounds() -> Option<RECT> {
-    let mut search = CodexWindowSearch { bounds: None };
+    let mut search = CodexWindowSearch { bounds: None, handle: None };
     unsafe {
         EnumWindows(Some(find_codex_window), &mut search as *mut CodexWindowSearch as LPARAM);
     }
     search.bounds
+}
+
+pub fn focus_codex_window() {
+    let mut search = CodexWindowSearch { bounds: None, handle: None };
+    unsafe {
+        EnumWindows(Some(find_codex_window), &mut search as *mut CodexWindowSearch as LPARAM);
+        if let Some(handle) = search.handle {
+            SetForegroundWindow(handle);
+        }
+    }
 }
 
 fn start_overlay_monitor<R: Runtime>(app: &App<R>) {

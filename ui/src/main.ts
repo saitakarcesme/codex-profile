@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./styles.css";
 
 type Profile = {
@@ -14,7 +13,6 @@ type ProfileResponse = {
   profiles: Profile[];
 };
 
-const appWindow = getCurrentWindow();
 const root = document.querySelector<HTMLDivElement>("#app")!;
 
 function escapeHtml(value: string): string {
@@ -195,8 +193,8 @@ async function addAccount() {
   }
 }
 
-document.querySelector<HTMLButtonElement>("#minimize")!.addEventListener("click", () => appWindow.minimize());
-document.querySelector<HTMLButtonElement>("#close")!.addEventListener("click", () => appWindow.hide());
+document.querySelector<HTMLButtonElement>("#minimize")!.addEventListener("click", () => invoke("hide_selector"));
+document.querySelector<HTMLButtonElement>("#close")!.addEventListener("click", () => invoke("hide_selector"));
 refreshButton.addEventListener("click", () => loadProfiles(true));
 
 void loadProfiles();

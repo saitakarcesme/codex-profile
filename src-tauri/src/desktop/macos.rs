@@ -31,3 +31,9 @@ pub fn installed_codex_icon_path() -> Option<PathBuf> {
     .map(PathBuf::from)
     .find(|path| path.is_file())
 }
+
+pub fn focus_codex_window() {
+    let _ = std::process::Command::new("osascript")
+        .args(["-e", "tell application \"Codex\" to activate"])
+        .output();
+}
