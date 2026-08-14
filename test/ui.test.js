@@ -7,6 +7,7 @@ const uiRoot = path.join(import.meta.dirname, "..", "ui", "src");
 const tauriConfig = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "tauri.conf.json"), "utf8"));
 const tauriSource = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "lib.rs"), "utf8");
 const bridgeSource = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "bridge.rs"), "utf8");
+const cargoManifest = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "Cargo.toml"), "utf8");
 const brandRoot = path.join(import.meta.dirname, "..", "assets", "brand");
 
 test("Tauri selector keeps the requested visual and interaction invariants", () => {
@@ -26,6 +27,8 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.match(css, /data-platform="macos"[^}]*--window-radius:\s*16px/);
   assert.match(source, /document\.documentElement\.dataset\.platform\s*=\s*hostPlatform/);
   assert.doesNotMatch(css, /border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.11\)/);
+  assert.equal(tauriConfig.app.macOSPrivateApi, true);
+  assert.match(cargoManifest, /"macos-private-api"/);
   assert.equal(tauriConfig.app.windows.find((window) => window.label === "main")?.transparent, true);
   assert.doesNotMatch(css, /#435fa2|#334f97|#252f72|#171e52/i);
   assert.doesNotMatch(css, /border[^;]*:\s*[^;]*(?:dashed|dotted)/i);
