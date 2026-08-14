@@ -4,7 +4,7 @@
 
 Codex Profile is an open-source companion for people who legitimately use more than one Codex/OpenAI account on one computer. It retains each login, lets the user choose the active identity, and leaves the existing Codex workspace in place.
 
-See [SETUP.md](SETUP.md) for the install → detect existing account → add another account → one-click Desktop switch flow.
+See [SETUP.md](SETUP.md) for the install → detect existing account → add another account → one-click Desktop switch flow. On a Mac, giving Codex this repository URL and saying “Bu repoyu SETUP.md üzerinden Mac'e kur” is sufficient; the document contains the complete agent-run build, install, sign-in handoff, and verification contract.
 
 It does not rotate accounts automatically, bypass usage limits, patch the proprietary desktop UI, or copy workspace state into per-account silos.
 
@@ -124,7 +124,7 @@ Use `codex-profile handoff <session-id> --profile Work`. It delegates to Codex's
 - Usage is reliable only when Codex's current app-server exposes the account methods and the service returns limit data.
 - A user-initiated logout revokes that account's OAuth session server-side, including retained refresh credentials. A normal profile click then fails safely before Desktop closes and never opens Chrome. Repair requires the explicit `reauth PROFILE` command or `desktop use PROFILE --repair-login`; an email address alone cannot securely replace OAuth consent, password, or 2FA.
 - Codex Desktop exposes no supported third-party extension point for its built-in bottom-left account menu. v0.1 therefore keeps the selector in a signed-binary-independent Tauri companion/tray surface instead of injecting into proprietary assets.
-- The Tauri shell, Node bridge, paths, tray, autostart, and macOS application bundle configuration are cross-platform. Windows was built and live-verified against the installed Desktop/CLI versions listed in [the project log](docs/PROJECT_LOG.md); a signed macOS build and live two-account Desktop cycle still need verification on macOS hardware.
+- The Tauri shell, Node bridge, paths, tray, autostart, and macOS application bundle configuration are cross-platform. Windows was built and live-verified against the installed Desktop/CLI versions listed in [the project log](docs/PROJECT_LOG.md). The Apple Silicon macOS release build, `/Applications` installation, native window, bundled core, menu-bar integration, and single real-account avatar flow are also live-verified; Apple notarization and a two-real-account macOS switch cycle remain future release work.
 
 ## Development
 
