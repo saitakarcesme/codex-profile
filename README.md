@@ -44,6 +44,7 @@ codex-profile run
 | `list [--usage] [--json]` | Show labels, email when exposed by Codex, active state, auth health, plan, and active-account limits. |
 | `use PROFILE [--force]` | Atomically activate a retained login. |
 | `rename PROFILE LABEL` | Change a profile's display label without reading or rewriting its credentials. |
+| `username PROFILE USERNAME` | Store the account's real ChatGPT/Codex username as credential-free profile metadata. |
 | `remove PROFILE [--force]` | Delete one retained credential snapshot. Active-profile removal requires `--force`. |
 | `run [--profile PROFILE] [--] ...` | Launch the installed Codex CLI with the selected identity and shared home. |
 | `handoff SESSION [--profile PROFILE]` | Fork a local session under the selected account when direct server continuation is not allowed. |

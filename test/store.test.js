@@ -94,6 +94,18 @@ test("renaming changes only profile metadata", (t) => {
   assert.equal(fs.readFileSync(store.authPath(initialized.imported.id), "utf8"), authBefore);
 });
 
+test("Codex username is explicit metadata and is never inferred from email", (t) => {
+  const fixture = tempEnvironment();
+  t.after(() => fixture.cleanup());
+  writeJson(path.join(fixture.codexHome, "auth.json"), fakeAuth("account-1", "mail-local@example.test"));
+  const store = new ProfileStore(fixture.env);
+  store.initialize("Personal");
+  assert.equal(store.load().profiles[0].username, undefined);
+  const profile = store.setUsername("Personal", "@real-codex-user");
+  assert.equal(profile.username, "real-codex-user");
+  assert.equal(store.load().profiles[0].email, "mail-local@example.test");
+});
+
 test("credential repair only accepts the same account identity", (t) => {
   const fixture = tempEnvironment();
   t.after(() => fixture.cleanup());

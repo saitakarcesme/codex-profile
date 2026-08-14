@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { inspectAuth, defaultLabel, readAuthFile, sanitizeLabel } from "./auth.js";
+import { inspectAuth, defaultLabel, readAuthFile, sanitizeLabel, sanitizeUsername } from "./auth.js";
 import { atomicCopy, atomicWrite, ensurePrivateDir, protectPrivateTree, withOperationLock } from "./fs-safe.js";
 import { resolveCodexHome, storePaths } from "./paths.js";
 
@@ -236,6 +236,16 @@ export class ProfileStore {
       profile.label = nextLabel;
       this.save(state);
       return { profile, previousLabel };
+    });
+  }
+
+  setUsername(selector, username) {
+    return withOperationLock(this.paths, () => {
+      const state = this.load();
+      const profile = this.resolve(selector, state);
+      profile.username = sanitizeUsername(username);
+      this.save(state);
+      return profile;
     });
   }
 

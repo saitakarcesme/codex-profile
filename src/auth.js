@@ -95,3 +95,13 @@ export function sanitizeLabel(label) {
   if (/\p{C}/u.test(value)) throw new Error("profile label contains control characters");
   return value;
 }
+
+export function sanitizeUsername(username) {
+  const value = String(username || "").trim().replace(/^@+/, "");
+  if (!value) throw new Error("Codex username cannot be empty");
+  if (value.length > 64) throw new Error("Codex username must be 64 characters or fewer");
+  if (!/^[\p{L}\p{N}._-]+$/u.test(value)) {
+    throw new Error("Codex username may contain only letters, numbers, dots, underscores, and hyphens");
+  }
+  return value;
+}

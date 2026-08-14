@@ -76,30 +76,6 @@ fn avatar_data_url(path: &str) -> Option<String> {
     Some(format!("data:{mime};base64,{}", STANDARD.encode(bytes)))
 }
 
-fn profile_handle(email: Option<&str>, label: Option<&str>) -> String {
-    let source = email
-        .and_then(|value| value.split_once('@').map(|(local, _)| local))
-        .filter(|value| !value.is_empty())
-        .or(label)
-        .unwrap_or("account");
-    let mut handle = String::with_capacity(source.len().min(64) + 1);
-    handle.push('@');
-    let mut last_was_separator = false;
-    for character in source.to_lowercase().chars().take(64) {
-        if character.is_alphanumeric() || matches!(character, '.' | '_' | '-') {
-            handle.push(character);
-            last_was_separator = false;
-        } else if !last_was_separator && handle.len() > 1 {
-            handle.push('_');
-            last_was_separator = true;
-        }
-    }
-    while handle.ends_with('_') {
-        handle.pop();
-    }
-    if handle.len() == 1 { "@account".into() } else { handle }
-}
-
 #[tauri::command]
 pub async fn list_profiles(bridge: State<'_, CoreBridge>) -> Result<Value, String> {
     let bridge = bridge.inner().clone();
@@ -110,16 +86,10 @@ pub async fn list_profiles(bridge: State<'_, CoreBridge>) -> Result<Value, Strin
     if let Some(profiles) = value.get_mut("profiles").and_then(Value::as_array_mut) {
         for profile in profiles {
             let avatar = profile.get("avatar").and_then(Value::as_str).and_then(avatar_data_url);
-            let handle = profile_handle(
-                profile.get("email").and_then(Value::as_str),
-                profile.get("label").and_then(Value::as_str),
-            );
             if let Some(object) = profile.as_object_mut() {
                 object.remove("avatar");
                 object.insert("avatarDataUrl".into(), avatar.map(Value::String).unwrap_or(Value::Null));
-                object.insert("handle".into(), Value::String(handle));
                 object.remove("email");
-                object.remove("name");
             }
         }
     }
@@ -158,19 +128,4 @@ pub fn brand_icon() -> Result<String, String> {
         _ => return Err("The installed Codex icon format is not supported".into()),
     };
     Ok(format!("data:{mime};base64,{}", STANDARD.encode(bytes)))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::profile_handle;
-
-    #[test]
-    fn handle_uses_only_the_email_local_part() {
-        assert_eq!(profile_handle(Some("User.Name@example.test"), Some("Personal")), "@user.name");
-    }
-
-    #[test]
-    fn handle_falls_back_to_a_safe_profile_label() {
-        assert_eq!(profile_handle(None, Some("Work Account")), "@work_account");
-    }
 }

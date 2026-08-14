@@ -59,6 +59,7 @@ Usage:
   codex-profile reauth PROFILE [--device-code]
   codex-profile use PROFILE [--force]
   codex-profile rename PROFILE LABEL
+  codex-profile username PROFILE USERNAME
   codex-profile remove PROFILE [--force]
   codex-profile run [--profile PROFILE] [--] [CODEX_ARGS...]
   codex-profile handoff SESSION [--profile PROFILE] [--force] [-- CODEX_ARGS...]
@@ -95,6 +96,7 @@ function profileRows(store, state) {
     return {
       active: profile.id === effectiveActiveId,
       label: profile.label,
+      username: profile.username || null,
       name: identity?.name || null,
       email: profile.email,
       plan: profile.planType,
@@ -246,6 +248,12 @@ async function commandRename(args, store) {
   if (args.length !== 2) throw new Error("rename requires a profile selector and new label");
   const result = store.rename(args[0], args[1]);
   process.stdout.write(`Renamed profile "${result.previousLabel}" to "${result.profile.label}".\n`);
+}
+
+async function commandUsername(args, store) {
+  if (args.length !== 2) throw new Error("username requires a profile selector and the account's Codex username");
+  const profile = store.setUsername(args[0], args[1]);
+  process.stdout.write(`Stored Codex username "@${profile.username}" for profile "${profile.label}".\n`);
 }
 
 async function activateIfRequested(args, store, force) {
@@ -409,6 +417,7 @@ export async function main(argv) {
     switch: commandUse,
     remove: commandRemove,
     rename: commandRename,
+    username: commandUsername,
     run: commandRun,
     handoff: commandHandoff,
     desktop: commandDesktop,

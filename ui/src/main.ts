@@ -4,7 +4,8 @@ import "./styles.css";
 type Profile = {
   id: string;
   label: string;
-  handle: string;
+  username?: string | null;
+  name?: string | null;
   active: boolean;
   status: string;
   avatarDataUrl?: string | null;
@@ -75,8 +76,12 @@ let profiles: Profile[] = [];
 let busyProfileId: string | null = null;
 let addBusy = false;
 
-function initials(handle: string): string {
-  return handle.replace(/^@/, "").slice(0, 2).toUpperCase() || "?";
+function profileTitle(profile: Profile): string {
+  return profile.username ? `@${profile.username}` : profile.name || profile.label;
+}
+
+function initials(title: string): string {
+  return title.replace(/^@/, "").slice(0, 2).toUpperCase() || "?";
 }
 
 function setStatus(message = "", kind: "neutral" | "error" = "neutral") {
@@ -102,19 +107,20 @@ async function requestProfiles(): Promise<ProfileResponse> {
 }
 
 function profileMarkup(profile: Profile): string {
+  const title = profileTitle(profile);
   const selected = profile.active ? " profile--selected" : "";
   const processing = busyProfileId === profile.id ? " profile--processing" : "";
   const image = profile.avatarDataUrl
     ? `<img src="${profile.avatarDataUrl}" alt="" draggable="false" />`
-    : `<span class="avatar-fallback" aria-hidden="true">${escapeHtml(initials(profile.handle))}</span>`;
+    : `<span class="avatar-fallback" aria-hidden="true">${escapeHtml(initials(title))}</span>`;
   return `
-    <button class="profile${selected}${processing}" type="button" data-profile-id="${escapeHtml(profile.id)}" aria-label="${escapeHtml(profile.handle)}${profile.active ? ", current profile" : ""}" aria-current="${profile.active ? "true" : "false"}">
+    <button class="profile${selected}${processing}" type="button" data-profile-id="${escapeHtml(profile.id)}" aria-label="${escapeHtml(title)}${profile.active ? ", current profile" : ""}" aria-current="${profile.active ? "true" : "false"}">
       <span class="avatar-wrap">
         <span class="avatar">${image}</span>
         ${profile.active ? `<span class="selected-indicator" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m4 8.2 2.5 2.5L12 5.4" /></svg></span>` : ""}
         ${busyProfileId === profile.id ? `<span class="progress-ring" aria-hidden="true"></span>` : ""}
       </span>
-      <span class="profile-name">${escapeHtml(profile.handle)}</span>
+      <span class="profile-name">${escapeHtml(title)}</span>
     </button>
   `;
 }
