@@ -35,6 +35,7 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.match(source, /class="titlebar" data-tauri-drag-region/);
   assert.doesNotMatch(source, /startDragging/);
   assert.match(source, /invoke\("switch_profile"/);
+  assert.match(source, /profile\.handle/);
   assert.match(source, /#minimize[\s\S]*invoke\("hide_selector"\)/);
   assert.match(source, /#close[\s\S]*invoke\("hide_selector"\)/);
   assert.doesNotMatch(source, /appWindow\.(?:minimize|hide)/);

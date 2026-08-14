@@ -4,6 +4,7 @@ import "./styles.css";
 type Profile = {
   id: string;
   label: string;
+  handle: string;
   active: boolean;
   status: string;
   avatarDataUrl?: string | null;
@@ -74,8 +75,8 @@ let profiles: Profile[] = [];
 let busyProfileId: string | null = null;
 let addBusy = false;
 
-function initials(label: string): string {
-  return label.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("") || "?";
+function initials(handle: string): string {
+  return handle.replace(/^@/, "").slice(0, 2).toUpperCase() || "?";
 }
 
 function setStatus(message = "", kind: "neutral" | "error" = "neutral") {
@@ -105,15 +106,15 @@ function profileMarkup(profile: Profile): string {
   const processing = busyProfileId === profile.id ? " profile--processing" : "";
   const image = profile.avatarDataUrl
     ? `<img src="${profile.avatarDataUrl}" alt="" draggable="false" />`
-    : `<span class="avatar-fallback" aria-hidden="true">${escapeHtml(initials(profile.label))}</span>`;
+    : `<span class="avatar-fallback" aria-hidden="true">${escapeHtml(initials(profile.handle))}</span>`;
   return `
-    <button class="profile${selected}${processing}" type="button" data-profile-id="${escapeHtml(profile.id)}" aria-label="${escapeHtml(profile.label)}${profile.active ? ", current profile" : ""}" aria-current="${profile.active ? "true" : "false"}">
+    <button class="profile${selected}${processing}" type="button" data-profile-id="${escapeHtml(profile.id)}" aria-label="${escapeHtml(profile.handle)}${profile.active ? ", current profile" : ""}" aria-current="${profile.active ? "true" : "false"}">
       <span class="avatar-wrap">
         <span class="avatar">${image}</span>
         ${profile.active ? `<span class="selected-indicator" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m4 8.2 2.5 2.5L12 5.4" /></svg></span>` : ""}
         ${busyProfileId === profile.id ? `<span class="progress-ring" aria-hidden="true"></span>` : ""}
       </span>
-      <span class="profile-name">${escapeHtml(profile.label)}</span>
+      <span class="profile-name">${escapeHtml(profile.handle)}</span>
     </button>
   `;
 }
