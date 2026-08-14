@@ -26,7 +26,8 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.equal(tauriConfig.app.windows.find((window) => window.label === "main")?.transparent, true);
   assert.doesNotMatch(css, /#435fa2|#334f97|#252f72|#171e52/i);
   assert.doesNotMatch(css, /border[^;]*:\s*[^;]*(?:dashed|dotted)/i);
-  assert.doesNotMatch(source, /email/i);
+  assert.match(source, /profile\.email/);
+  assert.doesNotMatch(source, /profile\.name/);
   assert.doesNotMatch(source, /brand-mark|<svg[^>]*brand/i);
   assert.match(source, /invoke<string>\("brand_icon"\)/);
   assert.match(launcher, /invoke\("open_selector"\)/);

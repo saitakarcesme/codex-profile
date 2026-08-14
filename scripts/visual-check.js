@@ -33,9 +33,9 @@ try {
           if (command === "list_profiles") {
             return {
               profiles: [
-                { id: "11111111-1111-4111-8111-111111111111", label: "Personal", username: "ibrahimsait", name: "Ibrahim Sait", active: true, status: "ready" },
-                { id: "22222222-2222-4222-8222-222222222222", label: "Secondary", username: "secondary-user", name: "Secondary User", active: false, status: "ready" },
-                { id: "33333333-3333-4333-8333-333333333333", label: "Fallback", username: null, name: "Display name", active: false, status: "ready" },
+                { id: "11111111-1111-4111-8111-111111111111", label: "Profile one", username: "verified-user", email: "first@example.test", active: true, status: "ready" },
+                { id: "22222222-2222-4222-8222-222222222222", label: "Profile two", username: null, email: "second@example.test", active: false, status: "ready" },
+                { id: "33333333-3333-4333-8333-333333333333", label: "Profile three", username: null, email: "third@example.test", active: false, status: "ready" },
               ],
             };
           }

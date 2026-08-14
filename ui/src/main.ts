@@ -5,7 +5,7 @@ type Profile = {
   id: string;
   label: string;
   username?: string | null;
-  name?: string | null;
+  email?: string | null;
   active: boolean;
   status: string;
   avatarDataUrl?: string | null;
@@ -77,7 +77,7 @@ let busyProfileId: string | null = null;
 let addBusy = false;
 
 function profileTitle(profile: Profile): string {
-  return profile.username ? `@${profile.username}` : profile.name || profile.label;
+  return profile.username ? `@${profile.username}` : profile.email || "Codex account";
 }
 
 function initials(title: string): string {

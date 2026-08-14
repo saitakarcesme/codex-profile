@@ -89,7 +89,7 @@ pub async fn list_profiles(bridge: State<'_, CoreBridge>) -> Result<Value, Strin
             if let Some(object) = profile.as_object_mut() {
                 object.remove("avatar");
                 object.insert("avatarDataUrl".into(), avatar.map(Value::String).unwrap_or(Value::Null));
-                object.remove("email");
+                object.remove("name");
             }
         }
     }
