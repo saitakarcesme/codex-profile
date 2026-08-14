@@ -5,11 +5,19 @@ import { createServer } from "vite";
 
 const root = path.resolve(import.meta.dirname, "..");
 const outputRoot = path.join(root, "artifacts", "visual");
-const edge = [
+const browserExecutable = [
+  process.env.CODEX_PROFILE_BROWSER_BIN,
   process.env.PROGRAMFILES && path.join(process.env.PROGRAMFILES, "Microsoft", "Edge", "Application", "msedge.exe"),
   process.env["PROGRAMFILES(X86)"] && path.join(process.env["PROGRAMFILES(X86)"], "Microsoft", "Edge", "Application", "msedge.exe"),
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
 ].filter(Boolean).find((candidate) => fs.existsSync(candidate));
-if (!edge || !fs.existsSync(edge)) throw new Error("Microsoft Edge was not found for visual verification");
+if (!browserExecutable) throw new Error("A Chromium-based browser was not found; set CODEX_PROFILE_BROWSER_BIN to its executable");
+const brandDataUrl = `data:image/png;base64,${fs.readFileSync(path.join(root, "assets", "brand", "codex-profile-logo.png")).toString("base64")}`;
 
 fs.mkdirSync(outputRoot, { recursive: true });
 const server = await createServer({
@@ -18,7 +26,7 @@ const server = await createServer({
   logLevel: "error",
 });
 await server.listen();
-const browser = await chromium.launch({ executablePath: edge, headless: true });
+const browser = await chromium.launch({ executablePath: browserExecutable, headless: true });
 try {
   for (const scale of [1, 1.25, 1.5]) {
     const context = await browser.newContext({
@@ -26,10 +34,10 @@ try {
       deviceScaleFactor: scale,
       reducedMotion: "no-preference",
     });
-    await context.addInitScript(() => {
+    await context.addInitScript(({ brandDataUrl }) => {
       window.__TAURI_INTERNALS__ = {
         invoke: async (command) => {
-          if (command === "brand_icon") throw new Error("Brand icon intentionally omitted from synthetic visual fixture");
+          if (command === "brand_icon") return brandDataUrl;
           if (command === "list_profiles") {
             return {
               profiles: [
@@ -45,7 +53,7 @@ try {
         unregisterCallback: () => {},
         metadata: { currentWindow: { label: "main" }, currentWebview: { label: "main" } },
       };
-    });
+    }, { brandDataUrl });
     const page = await context.newPage();
     await page.goto("http://127.0.0.1:1420", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Add account" }).waitFor();

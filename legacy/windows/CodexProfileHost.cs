@@ -37,6 +37,7 @@ internal static class CodexProfileHost
                     addParameterValue.Invoke(shell, new object[] { "NodePath", options["node"] });
                     addParameterValue.Invoke(shell, new object[] { "CliPath", options["cli"] });
                     addParameterValue.Invoke(shell, new object[] { "WorkingDirectory", options["cwd"] });
+                    addParameterValue.Invoke(shell, new object[] { "BrandIconPath", options["brand"] });
                     if (options.ContainsKey("start-hidden")) addParameterValue.Invoke(shell, new object[] { "StartHidden", true });
                     if (options.ContainsKey("preview")) addParameterValue.Invoke(shell, new object[] { "PreviewPath", options["preview"] });
                     FindNoArgumentMethod(shellType, "Invoke").Invoke(shell, null);
@@ -74,7 +75,7 @@ internal static class CodexProfileHost
                 throw new ArgumentException("Invalid Codex Profile host arguments.");
             result[key.Substring(2)] = args[++index];
         }
-        foreach (var required in new[] { "script", "node", "cli", "cwd", "automation" })
+        foreach (var required in new[] { "script", "node", "cli", "cwd", "automation", "brand" })
             if (!result.ContainsKey(required) || String.IsNullOrWhiteSpace(result[required]))
                 throw new ArgumentException("Missing Codex Profile host argument: " + required);
         return result;

@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$NodePath,
     [Parameter(Mandatory = $true)][string]$CliPath,
     [Parameter(Mandatory = $true)][string]$WorkingDirectory,
+    [Parameter(Mandatory = $true)][string]$BrandIconPath,
     [switch]$StartHidden,
     [string]$PreviewPath = ""
 )
@@ -46,18 +47,7 @@ if (-not $createdNew) {
 $showEventName = if ($isPreview) { "Local\CodexProfileWpfV3PreviewShow-$PID" } else { "Local\CodexProfileWpfV3Show" }
 $showEvent = New-Object System.Threading.EventWaitHandle($false, [System.Threading.EventResetMode]::AutoReset, $showEventName)
 
-function Get-CodexResource([string]$name) {
-    try {
-        $package = Get-AppxPackage OpenAI.Codex -ErrorAction Stop | Select-Object -First 1
-        $candidate = Join-Path $package.InstallLocation ("app\resources\" + $name)
-        if (Test-Path -LiteralPath $candidate) { return $candidate }
-    } catch {}
-    return $null
-}
-
-$script:CodexBlackIcon = Get-CodexResource "chatgpt-tray-light.ico"
-$script:CodexWhiteIcon = Get-CodexResource "chatgpt-tray-dark.ico"
-$script:CodexAppIcon = Get-CodexResource "chatgpt-tray-dark.ico"
+$script:CodexAppIcon = $BrandIconPath
 
 [xml]$mainXaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -110,7 +100,9 @@ $script:CodexAppIcon = Get-CodexResource "chatgpt-tray-dark.ico"
     <Border Grid.Row="0" BorderBrush="#343538" BorderThickness="0,0,0,1" Background="#202123">
       <Grid x:Name="TitleBar">
         <StackPanel Orientation="Horizontal" Margin="18,0,0,0" VerticalAlignment="Center">
-          <Image x:Name="HeaderLogo" Width="23" Height="23" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
+          <Border Width="26" Height="26" Background="#FFFFFF" CornerRadius="7">
+            <Image x:Name="HeaderLogo" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
+          </Border>
           <TextBlock Text="Codex Profile" Margin="10,0,0,1" VerticalAlignment="Center" Foreground="#F3F3F4" FontFamily="Segoe UI Variable Display" FontSize="15" FontWeight="SemiBold"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,7,0" VerticalAlignment="Center">
@@ -156,7 +148,7 @@ $script:CodexAppIcon = Get-CodexResource "chatgpt-tray-dark.ico"
         Width="54" Height="54" WindowStyle="None" ResizeMode="NoResize"
         AllowsTransparency="True" Background="Transparent" ShowInTaskbar="False"
         Topmost="True" UseLayoutRounding="True" SnapsToDevicePixels="True">
-  <Border x:Name="DockSurface" CornerRadius="27" Background="#232322" BorderBrush="#4C4C49" BorderThickness="1" Cursor="Hand">
+  <Border x:Name="DockSurface" CornerRadius="27" Background="#FFFFFF" BorderBrush="#D7D7D7" BorderThickness="1" Cursor="Hand">
     <Grid>
       <Ellipse x:Name="DockHover" Margin="3" Fill="#FFFFFF" Opacity="0"/>
       <Image x:Name="DockLogo" Width="31" Height="31" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
@@ -275,9 +267,9 @@ $dockSurface = $dockWindow.FindName("DockSurface")
 $dockHover = $dockWindow.FindName("DockHover")
 $dockLogo = $dockWindow.FindName("DockLogo")
 
-$whiteLogo = New-BitmapSource $script:CodexWhiteIcon
-if ($whiteLogo) { $headerLogo.Source = $whiteLogo }
-if ($whiteLogo) { $dockLogo.Source = $whiteLogo }
+$brandLogo = New-BitmapSource $script:CodexAppIcon
+if ($brandLogo) { $headerLogo.Source = $brandLogo }
+if ($brandLogo) { $dockLogo.Source = $brandLogo }
 if ($script:CodexAppIcon) {
     try { $mainWindow.Icon = New-BitmapSource $script:CodexAppIcon } catch {}
 }

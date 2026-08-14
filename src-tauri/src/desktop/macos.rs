@@ -1,6 +1,5 @@
 //! macOS-only shell integration. Account switching remains in the shared Node core.
 
-use std::path::PathBuf;
 use tauri::{App, Runtime};
 #[cfg(not(debug_assertions))]
 use tauri_plugin_autostart::ManagerExt;
@@ -20,16 +19,6 @@ pub fn configure_shell<R: Runtime>(app: &App<R>) -> Result<(), Box<dyn std::erro
     let _ = app;
 
     Ok(())
-}
-
-pub fn installed_codex_icon_path() -> Option<PathBuf> {
-    [
-        "/Applications/Codex.app/Contents/Resources/icon.png",
-        "/Applications/ChatGPT.app/Contents/Resources/icon.png",
-    ]
-    .into_iter()
-    .map(PathBuf::from)
-    .find(|path| path.is_file())
 }
 
 pub fn focus_codex_window() {

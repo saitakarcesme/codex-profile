@@ -32,6 +32,10 @@ codex-profile doctor
 
 The install is local. No credential is uploaded to this repository or to a Codex Profile service.
 
+The build generates the macOS, Windows, Linux, tray/menu-bar, taskbar, and shortcut icons from the transparent master logo in `assets/brand/codex-profile-logo.png`. Rebuilding keeps every shell surface on the same mark.
+
+`npm run ui:visual-check` automatically uses Edge, Chrome, or Chromium. Set `CODEX_PROFILE_BROWSER_BIN` when the browser executable lives elsewhere.
+
 ## Keep the existing account
 
 With the primary account already signed in to Codex:

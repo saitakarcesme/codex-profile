@@ -227,8 +227,9 @@ test("Windows companion is compact, draggable, scalable, and keeps repair explic
   assert.match(launcher, /TextOptions\.TextRenderingMode="ClearType"/);
   assert.match(launcher, /Width="690" Height="350"/);
   assert.match(launcher, /if \(-not \$StartHidden\) \{ \$mainWindow\.Show\(\) \}/);
-  assert.match(launcher, /chatgpt-tray-light\.ico/);
-  assert.match(launcher, /CodexAppIcon = Get-CodexResource "chatgpt-tray-dark\.ico"/);
+  assert.match(launcher, /CodexAppIcon = \$BrandIconPath/);
+  assert.match(launcher, /Background="#FFFFFF" CornerRadius="7"/);
+  assert.doesNotMatch(launcher, /Get-CodexResource|chatgpt-tray-(?:light|dark)\.ico/);
   assert.match(launcher, /HorizontalScrollBarVisibility="Hidden"/);
   assert.match(launcher, /Add_PreviewMouseLeftButtonDown/);
   assert.match(launcher, /Add_PreviewMouseWheel/);

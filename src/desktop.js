@@ -162,12 +162,11 @@ export function windowsDesktopAppId(env = process.env) {
   return appId;
 }
 
-function windowsCodexIconPath(env = process.env) {
-  const script = "$package = Get-AppxPackage OpenAI.Codex | Select-Object -First 1; if ($package) { $icon = Join-Path $package.InstallLocation 'app\\resources\\chatgpt-tray-dark.ico'; if (Test-Path -LiteralPath $icon) { $icon } }";
-  const result = spawnSync("powershell.exe", ["-NoProfile", "-Command", script], { encoding: "utf8", env, windowsHide: true });
-  const icon = result.stdout?.trim();
-  if (result.status !== 0 || !icon || !fs.existsSync(icon)) throw new Error("installed Codex icon could not be resolved");
-  return icon;
+function bundledBrandAssets() {
+  const png = fileURLToPath(new URL("../assets/brand/codex-profile-logo.png", import.meta.url));
+  const ico = fileURLToPath(new URL("../assets/brand/codex-profile-icon.ico", import.meta.url));
+  if (!fs.existsSync(png) || !fs.existsSync(ico)) throw new Error("bundled Codex Profile brand assets could not be resolved");
+  return { png, ico };
 }
 
 function windowsAutomationAssembly(env = process.env) {
@@ -184,10 +183,15 @@ export function ensureWindowsMenuHost(env = process.env) {
   const root = storePaths(env).root;
   ensurePrivateDir(root);
   const source = fileURLToPath(new URL("../legacy/windows/CodexProfileHost.cs", import.meta.url));
-  const icon = windowsCodexIconPath(env);
-  const digest = crypto.createHash("sha256").update(fs.readFileSync(source)).update(fs.readFileSync(icon)).digest("hex").slice(0, 12);
+  const brand = bundledBrandAssets();
+  const digest = crypto.createHash("sha256")
+    .update(fs.readFileSync(source))
+    .update(fs.readFileSync(brand.png))
+    .update(fs.readFileSync(brand.ico))
+    .digest("hex")
+    .slice(0, 12);
   const output = path.join(root, `CodexProfileHost-${digest}.exe`);
-  if (fs.existsSync(output)) return { host: output, icon, automation: windowsAutomationAssembly(env) };
+  if (fs.existsSync(output)) return { host: output, icon: brand.ico, brand: brand.png, automation: windowsAutomationAssembly(env) };
 
   const windows = env.WINDIR || env.SystemRoot || "C:\\Windows";
   const compiler = path.join(windows, "Microsoft.NET", "Framework64", "v4.0.30319", "csc.exe");
@@ -196,18 +200,18 @@ export function ensureWindowsMenuHost(env = process.env) {
   const temporary = path.join(root, `.CodexProfileHost-${digest}-${process.pid}.exe`);
   const compiled = spawnSync(compiler, [
     "/nologo", "/target:winexe", "/platform:anycpu", "/optimize+",
-    `/out:${temporary}`, `/win32icon:${icon}`, source,
+    `/out:${temporary}`, `/win32icon:${brand.ico}`, source,
   ], { encoding: "utf8", env, windowsHide: true });
   if (compiled.status !== 0 || !fs.existsSync(temporary)) {
     try { fs.unlinkSync(temporary); } catch { /* compilation produced no artifact */ }
     throw new Error(`failed to build the Codex Profile GUI host${compiled.stderr?.trim() ? `: ${compiled.stderr.trim()}` : ""}`);
   }
   fs.renameSync(temporary, output);
-  return { host: output, icon, automation: automationAssembly };
+  return { host: output, icon: brand.ico, brand: brand.png, automation: automationAssembly };
 }
 
-function windowsMenuHostArguments({ script, cliPath, cwd, automation, startHidden = false }) {
-  const values = ["--script", script, "--node", process.execPath, "--cli", path.resolve(cliPath), "--cwd", path.resolve(cwd), "--automation", automation];
+function windowsMenuHostArguments({ script, cliPath, cwd, automation, brand, startHidden = false }) {
+  const values = ["--script", script, "--node", process.execPath, "--cli", path.resolve(cliPath), "--cwd", path.resolve(cwd), "--automation", automation, "--brand", brand];
   if (startHidden) values.push("--start-hidden");
   return values.map((value) => `"${String(value).replaceAll('"', '\\"')}"`).join(" ");
 }
@@ -497,7 +501,7 @@ export function launchWindowsMenu({ env = process.env, cliPath = process.argv[1]
   const script = fileURLToPath(new URL("../legacy/windows/CodexProfileLauncher.ps1", import.meta.url));
   const gui = ensureWindowsMenuHost(env);
   const literal = (value) => `'${String(value).replaceAll("'", "''")}'`;
-  const hostArguments = windowsMenuHostArguments({ script, cliPath, cwd, automation: gui.automation, startHidden });
+  const hostArguments = windowsMenuHostArguments({ script, cliPath, cwd, automation: gui.automation, brand: gui.brand, startHidden });
   const link = path.join(storePaths(env).root, "Codex Profile Menu.lnk");
   const createCommand = [
     "$shell = New-Object -ComObject WScript.Shell",
@@ -571,8 +575,8 @@ export function installWindowsShortcuts(profiles, { env = process.env, cliPath =
   const legacy = shell ? null : ensureWindowsMenuHost(env);
   const hostPath = shell || legacy.host;
   const hostIcon = shell ? `${shell},0` : `${legacy.icon},0`;
-  const menuArguments = shell ? "" : windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: legacy.automation, startHidden: false });
-  const startupArguments = shell ? "--hidden" : windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: legacy.automation, startHidden: true });
+  const menuArguments = shell ? "" : windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: legacy.automation, brand: legacy.brand, startHidden: false });
+  const startupArguments = shell ? "--hidden" : windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: legacy.automation, brand: legacy.brand, startHidden: true });
   const script = [
     "[Console]::OutputEncoding = [Text.Encoding]::UTF8",
     `$NodePath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(process.execPath)}'))`,

@@ -1,12 +1,16 @@
 mod bridge;
 mod desktop;
 
+use bridge::{add_account, brand_icon, list_profiles, switch_profile, CoreBridge, BRAND_ICON_PNG};
 use std::{
     sync::atomic::{AtomicU64, Ordering},
     time::{SystemTime, UNIX_EPOCH},
 };
-use bridge::{add_account, brand_icon, list_profiles, switch_profile, CoreBridge};
-use tauri::{menu::{Menu, MenuItem}, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}, Manager, State, WindowEvent};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, State, WindowEvent,
+};
 use tauri_plugin_autostart::MacosLauncher;
 
 #[derive(Default)]
@@ -58,8 +62,13 @@ fn hide_selector(app: tauri::AppHandle, guard: State<'_, LauncherFocusGuard>) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_selector(app)))
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--hidden"])))
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_selector(app)
+        }))
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec!["--hidden"]),
+        ))
         .setup(|app| {
             app.manage(LauncherFocusGuard::default());
             app.manage(CoreBridge::discover(app.handle())?);
@@ -78,24 +87,30 @@ pub fn run() {
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
                         show_selector(tray.app_handle());
                     }
                 })
                 .build(app)?;
-            let codex_icon = desktop::installed_codex_icon_path()
-                .and_then(|path| tauri::image::Image::from_path(path).ok());
-            if let Some(icon) = codex_icon {
-                tray.set_icon(Some(icon.clone()))?;
-                if let Some(window) = app.get_webview_window("main") { window.set_icon(icon.clone())?; }
-                if let Some(window) = app.get_webview_window("launcher") { window.set_icon(icon)?; }
-            } else if let Some(icon) = app.default_window_icon() {
-                tray.set_icon(Some(icon.clone()))?;
+            let brand_icon = tauri::image::Image::from_bytes(BRAND_ICON_PNG)?;
+            tray.set_icon_with_as_template(Some(brand_icon.clone()), cfg!(target_os = "macos"))?;
+            if let Some(window) = app.get_webview_window("main") {
+                window.set_icon(brand_icon.clone())?;
+            }
+            if let Some(window) = app.get_webview_window("launcher") {
+                window.set_icon(brand_icon)?;
             }
 
             let hidden = std::env::args().any(|arg| arg == "--hidden");
             if hidden {
-                if let Some(window) = app.get_webview_window("main") { window.hide()?; }
+                if let Some(window) = app.get_webview_window("main") {
+                    window.hide()?;
+                }
             }
             Ok(())
         })

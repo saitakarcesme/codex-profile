@@ -5,6 +5,9 @@ import path from "node:path";
 
 const uiRoot = path.join(import.meta.dirname, "..", "ui", "src");
 const tauriConfig = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "tauri.conf.json"), "utf8"));
+const tauriSource = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "lib.rs"), "utf8");
+const bridgeSource = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "bridge.rs"), "utf8");
+const brandRoot = path.join(import.meta.dirname, "..", "assets", "brand");
 
 test("Tauri selector keeps the requested visual and interaction invariants", () => {
   const css = fs.readFileSync(path.join(uiRoot, "styles.css"), "utf8");
@@ -33,6 +36,16 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.match(launcher, /invoke\("open_selector"\)/);
   assert.match(launcher, /invoke<string>\("brand_icon"\)/);
   assert.match(launcherCss, /border-radius:\s*50%/);
+  assert.match(css, /\.brand-icon[^}]*filter:\s*brightness\(0\) invert\(1\)/);
+  assert.match(launcherCss, /#launcher img[^}]*filter:\s*brightness\(0\) invert\(1\)/);
+  assert.equal(fs.existsSync(path.join(brandRoot, "codex-profile-logo.png")), true);
+  assert.equal(fs.existsSync(path.join(brandRoot, "codex-profile-icon.ico")), true);
+  assert.equal(fs.existsSync(path.join(brandRoot, "codex-profile-icon.svg")), false);
+  const brandPng = fs.readFileSync(path.join(brandRoot, "codex-profile-logo.png"));
+  assert.equal(brandPng.readUInt32BE(16), brandPng.readUInt32BE(20));
+  assert.equal(brandPng[25], 6, "master logo must remain an RGBA PNG with transparency");
+  assert.match(bridgeSource, /include_bytes!\("\.\.\/\.\.\/assets\/brand\/codex-profile-logo\.png"\)/);
+  assert.match(tauriSource, /set_icon_with_as_template\(Some\(brand_icon\.clone\(\)\), cfg!\(target_os = "macos"\)\)/);
   assert.match(source, /class="titlebar" data-tauri-drag-region/);
   assert.doesNotMatch(source, /startDragging/);
   assert.match(source, /invoke\("switch_profile"/);
