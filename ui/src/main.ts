@@ -14,6 +14,12 @@ type ProfileResponse = {
 };
 
 const root = document.querySelector<HTMLDivElement>("#app")!;
+const hostPlatform = /Macintosh|Mac OS X/i.test(navigator.userAgent)
+  ? "macos"
+  : /Windows/i.test(navigator.userAgent)
+    ? "windows"
+    : "other";
+document.documentElement.dataset.platform = hostPlatform;
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({

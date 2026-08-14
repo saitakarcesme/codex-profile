@@ -19,7 +19,10 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.match(css, /profile:hover \.avatar-wrap/);
   assert.match(css, /profile--selected \.avatar/);
   assert.match(css, /#202123|#202124/);
-  assert.match(css, /border-radius:\s*24px/);
+  assert.match(css, /data-platform="windows"[^}]*--window-radius:\s*8px/);
+  assert.match(css, /data-platform="macos"[^}]*--window-radius:\s*12px/);
+  assert.match(source, /document\.documentElement\.dataset\.platform\s*=\s*hostPlatform/);
+  assert.doesNotMatch(css, /border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.11\)/);
   assert.equal(tauriConfig.app.windows.find((window) => window.label === "main")?.transparent, true);
   assert.doesNotMatch(css, /#435fa2|#334f97|#252f72|#171e52/i);
   assert.doesNotMatch(css, /border[^;]*:\s*[^;]*(?:dashed|dotted)/i);
