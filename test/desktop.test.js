@@ -39,6 +39,12 @@ test("Windows Desktop readiness requires a visible main window and app server", 
   assert.equal(_test.desktopReady(hidden, "win32"), true);
 });
 
+test("Windows forced close terminates the complete Desktop tree in one command", () => {
+  assert.deepEqual(_test.windowsTaskkillArguments([12, 10, 12, 0, -1]), [
+    "/F", "/T", "/PID", "12", "/PID", "10",
+  ]);
+});
+
 test("Windows launch uses the installed AppID without invoking the download launcher", async (t) => {
   const fixture = tempEnvironment();
   t.after(() => fixture.cleanup());
@@ -89,20 +95,25 @@ test("desktop switch closes, activates, then launches in that order", async (t) 
   writeJson(secondAuth, fakeAuth("account-2", "second@example.test"));
   store.addFromAuth(secondAuth, "Second");
   const events = [];
+  let usageReads = 0;
   const result = await switchDesktopProfile({
     store,
     selector: "Second",
     requestedWorkspace: fixture.root,
     close: async () => { events.push("close"); return { wasRunning: true, forced: false, closed: 1 }; },
     launch: async (workspace) => { events.push(`launch:${store.inspectShared().email}:${workspace}`); },
-    readUsage: async () => ({
-      account: { account: { email: "second@example.test", type: "chatgpt", planType: "pro" } },
-      usage: { rateLimits: { primary: { usedPercent: 20, resetsAt: 1 } } },
-    }),
+    readUsage: async () => {
+      usageReads += 1;
+      return {
+        account: { account: { email: "second@example.test", type: "chatgpt", planType: "pro" } },
+        usage: { rateLimits: { primary: { usedPercent: 20, resetsAt: 1 } } },
+      };
+    },
   });
   assert.deepEqual(events, ["close", `launch:second@example.test:${fixture.root}`]);
   assert.equal(result.switched.target.label, "Second");
   assert.equal(result.usage.email, "second@example.test");
+  assert.equal(usageReads, 1);
   assert.equal(result.integrity.ok, true);
   assert.equal(JSON.parse(fs.readFileSync(store.paths.desktopAudit, "utf8")).sharedState.ok, true);
   const history = fs.readFileSync(store.paths.desktopAuditHistory, "utf8").trim().split("\n").map((line) => JSON.parse(line));
@@ -282,8 +293,10 @@ test("post-close failure rolls back and relaunches the previous account", async 
     selector: second.id,
     requestedWorkspace: fixture.root,
     validate: async () => ({ target: second, usage: { email: second.email } }),
-    close: async () => ({ wasRunning: true, forced: false, closed: 1 }),
-    readUsage: async () => { throw new Error("post-install validation failed"); },
+    close: async () => {
+      writeJson(store.authPath(second.id), fakeAuth("wrong-account", "wrong@example.test"));
+      return { wasRunning: true, forced: false, closed: 1 };
+    },
     launch: async () => { launchedAs = store.inspectShared().email; return { attempt: 1, processCount: 1 }; },
   }), /relaunched as "First"/);
   assert.equal(launchedAs, "first@example.test");

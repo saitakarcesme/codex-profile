@@ -86,6 +86,13 @@ async function waitForWindowsDesktopExit(env, timeoutMs) {
   return false;
 }
 
+function windowsTaskkillArguments(processIds) {
+  const ids = [...new Set(processIds)]
+    .map(Number)
+    .filter((pid) => Number.isInteger(pid) && pid > 0);
+  return ["/F", "/T", ...ids.flatMap((pid) => ["/PID", String(pid)])];
+}
+
 function desktopReady(state, platform) {
   return platform !== "win32" || (
     state.roots.some((item) => item.name?.toLowerCase() === "chatgpt.exe" && Number(item.mainWindowHandle) > 0)
@@ -228,23 +235,23 @@ export async function closeDesktop(env = process.env, platform = process.platfor
 
   if (platform === "win32") {
     const rootIds = before.roots.map((item) => Number(item.pid)).filter(Number.isInteger);
-    for (const pid of rootIds) {
-      const script = `$process = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($process) { [void]$process.CloseMainWindow() }`;
-      spawnSync("powershell.exe", ["-NoProfile", "-Command", script], { stdio: "ignore", env });
-    }
-    if (await waitForWindowsDesktopExit(env, 10_000)) {
+    const closeScript = rootIds
+      .map((pid) => `$process = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($process) { [void]$process.CloseMainWindow() }`)
+      .join("; ");
+    if (closeScript) spawnSync("powershell.exe", ["-NoProfile", "-Command", closeScript], { stdio: "ignore", env, windowsHide: true });
+    // Codex Desktop currently ignores CloseMainWindow on Windows. Keep a short
+    // grace period for auth/database flushes, then terminate the isolated Desktop
+    // tree in one command instead of paying the former 10s + 4s fixed waits.
+    if (await waitForWindowsDesktopExit(env, 1_500)) {
       return { wasRunning: true, forced: false, closed: before.desktop.length };
     }
-    const remainingIds = before.desktop
+    const remainingIds = desktopProcessState(env, "win32").desktop
       .map((item) => Number(item.pid))
-      .filter((pid) => Number.isInteger(pid) && !rootIds.includes(pid));
-    const shutdownOrder = [...remainingIds, ...rootIds];
-    for (const pid of shutdownOrder) spawnSync("taskkill.exe", ["/PID", String(pid)], { stdio: "ignore", env });
-    if (await waitForWindowsDesktopExit(env, 4_000)) {
-      return { wasRunning: true, forced: false, closed: before.desktop.length };
+      .filter((pid) => Number.isInteger(pid));
+    if (remainingIds.length) {
+      spawnSync("taskkill.exe", windowsTaskkillArguments(remainingIds), { stdio: "ignore", env, windowsHide: true });
     }
-    for (const pid of shutdownOrder) spawnSync("taskkill.exe", ["/F", "/PID", String(pid)], { stdio: "ignore", env });
-    if (!(await waitForWindowsDesktopExit(env, 4_000))) {
+    if (!(await waitForWindowsDesktopExit(env, 3_000))) {
       throw new Error("Codex Desktop did not exit; profile was not switched");
     }
     return { wasRunning: true, forced: true, closed: before.desktop.length };
@@ -436,7 +443,10 @@ export async function switchDesktopProfile({
   let rollback = null;
   try {
     switched = store.activate(requestedTarget.id);
-    usage = safeUsage(await readUsage(store.codexHome, store.env), switched.target);
+    const installed = store.inspectShared();
+    if (!installed || installed.fingerprint !== switched.target.fingerprint) {
+      throw new Error("activated Codex credentials do not match the selected profile");
+    }
   } catch (error) {
     operationError = error;
     if (outgoing) {
@@ -621,4 +631,4 @@ export function installWindowsShortcuts(profiles, { env = process.env, cliPath =
   return Array.isArray(created) ? created : [created];
 }
 
-export const _test = { desktopReady, shortcutSafeName };
+export const _test = { desktopReady, shortcutSafeName, windowsTaskkillArguments };
