@@ -23,7 +23,7 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.match(css, /profile--selected \.avatar/);
   assert.match(css, /#202123|#202124/);
   assert.match(css, /data-platform="windows"[^}]*--window-radius:\s*8px/);
-  assert.match(css, /data-platform="macos"[^}]*--window-radius:\s*12px/);
+  assert.match(css, /data-platform="macos"[^}]*--window-radius:\s*16px/);
   assert.match(source, /document\.documentElement\.dataset\.platform\s*=\s*hostPlatform/);
   assert.doesNotMatch(css, /border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.11\)/);
   assert.equal(tauriConfig.app.windows.find((window) => window.label === "main")?.transparent, true);
@@ -37,6 +37,7 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.match(launcher, /invoke<string>\("brand_icon"\)/);
   assert.match(launcherCss, /border-radius:\s*50%/);
   assert.match(css, /\.brand-icon[^}]*filter:\s*brightness\(0\) invert\(1\)/);
+  assert.match(css, /\.brand-icon[^}]*width:\s*22px[^}]*height:\s*22px/);
   assert.match(launcherCss, /#launcher img[^}]*filter:\s*brightness\(0\) invert\(1\)/);
   assert.equal(fs.existsSync(path.join(brandRoot, "codex-profile-logo.png")), true);
   assert.equal(fs.existsSync(path.join(brandRoot, "codex-profile-icon.ico")), true);

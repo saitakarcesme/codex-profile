@@ -14,7 +14,7 @@
 }
 
 :root[data-platform="windows"] { --window-radius: 8px; }
-:root[data-platform="macos"] { --window-radius: 12px; }
+:root[data-platform="macos"] { --window-radius: 16px; }
 
 * { box-sizing: border-box; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
@@ -58,7 +58,7 @@ button { font: inherit; color: inherit; }
 }
 
 .brand { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 550; letter-spacing: -0.01em; color: rgba(255,255,255,.88); }
-.brand-icon { width: 20px; height: 20px; object-fit: contain; filter: brightness(0) invert(1); opacity: 0; transition: opacity var(--motion-normal) var(--ease-standard); }
+.brand-icon { width: 22px; height: 22px; object-fit: contain; filter: brightness(0) invert(1); opacity: 0; transition: opacity var(--motion-normal) var(--ease-standard); }
 .brand-icon--ready { opacity: .94; }
 
 .window-controls { display: flex; align-items: center; gap: 2px; }

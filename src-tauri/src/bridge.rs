@@ -23,12 +23,15 @@ impl CoreBridge {
             .unwrap()
             .to_path_buf();
         let resource_root = app.path().resource_dir()?;
-        let candidates = [
-            std::env::var_os("CODEX_PROFILE_CLI_PATH").map(PathBuf::from),
-            Some(manifest_root.join("bin/codex-profile.js")),
-            Some(resource_root.join("core/bin/codex-profile.js")),
-            Some(resource_root.join("resources/core/bin/codex-profile.js")),
-        ];
+        let configured = std::env::var_os("CODEX_PROFILE_CLI_PATH").map(PathBuf::from);
+        let source = Some(manifest_root.join("bin/codex-profile.js"));
+        let bundled = Some(resource_root.join("core/bin/codex-profile.js"));
+        let nested_bundled = Some(resource_root.join("resources/core/bin/codex-profile.js"));
+        let candidates = if cfg!(debug_assertions) {
+            [configured, source, bundled, nested_bundled]
+        } else {
+            [configured, bundled, nested_bundled, source]
+        };
         let cli = candidates
             .into_iter()
             .flatten()
