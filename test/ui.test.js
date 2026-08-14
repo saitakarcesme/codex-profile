@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const uiRoot = path.join(import.meta.dirname, "..", "ui", "src");
+const tauriConfig = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "tauri.conf.json"), "utf8"));
 
 test("Tauri selector keeps the requested visual and interaction invariants", () => {
   const css = fs.readFileSync(path.join(uiRoot, "styles.css"), "utf8");
@@ -18,6 +19,8 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.match(css, /profile:hover \.avatar-wrap/);
   assert.match(css, /profile--selected \.avatar/);
   assert.match(css, /#202123|#202124/);
+  assert.match(css, /border-radius:\s*24px/);
+  assert.equal(tauriConfig.app.windows.find((window) => window.label === "main")?.transparent, true);
   assert.doesNotMatch(css, /#435fa2|#334f97|#252f72|#171e52/i);
   assert.doesNotMatch(css, /border[^;]*:\s*[^;]*(?:dashed|dotted)/i);
   assert.doesNotMatch(source, /email/i);
