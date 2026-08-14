@@ -7,7 +7,8 @@ Codex Profile keeps multiple legitimate Codex/OpenAI logins while preserving one
 - Node.js 20 or newer
 - Git
 - A current Codex CLI installation
-- Codex Desktop for the one-click Windows switcher
+- Codex Desktop for one-action close/switch/relaunch
+- Rust stable and the platform prerequisites listed by [Tauri](https://v2.tauri.app/start/prerequisites/) when building the desktop UI from source
 - One Codex account already signed in on the computer
 
 Verify the prerequisites:
@@ -24,6 +25,8 @@ git --version
 git clone https://github.com/saitakarcesme/codex-profile.git
 cd codex-profile
 npm install -g .
+npm install
+npm run tauri:build
 codex-profile doctor
 ```
 
@@ -59,7 +62,9 @@ Confirm both profiles:
 codex-profile list --usage
 ```
 
-## Windows one-click Desktop switching
+The Windows installer is produced at `src-tauri/target/release/bundle/nsis/`. The MSI is beside it under `bundle/msi`. On macOS, the same command produces the `.app`/DMG on a Mac.
+
+## One-click Desktop switching
 
 ```console
 codex-profile desktop shortcuts
@@ -71,7 +76,7 @@ This creates:
 - a `Codex Profile Menu` shortcut;
 - a Startup shortcut that runs the companion invisibly.
 
-At Windows sign-in, the companion waits in the background. When Codex Desktop is visible, a small Codex button appears near its bottom-right corner. Choose a profile and Codex Profile safely closes Desktop, switches the protected auth slot, and relaunches the installed Codex package. The same workspace remains authoritative.
+The Tauri companion starts hidden in the system tray at sign-in. Choose `Codex Profile` from the tray, then choose a profile. Codex Profile safely closes Desktop, switches the protected auth slot, relaunches the installed Codex package, and keeps the same workspace authoritative. `codex-profile desktop menu` opens or focuses the same single instance.
 
 You can also switch from a terminal:
 
@@ -80,9 +85,13 @@ codex-profile desktop use Personal
 codex-profile desktop use Secondary
 ```
 
-## macOS and Linux
+## macOS
 
-The CLI profile store and atomic switching paths are implemented for macOS and Linux, but the v0.1 native companion is Windows-first. Close active Codex processes, then run:
+The Tauri frontend and Rust shell are shared with Windows. macOS-specific autostart uses a LaunchAgent; Node process/path handling uses the existing macOS adapter. Build on a Mac with `npm run tauri:build`. The source is cross-platform, but v0.1 has not yet completed a live signed-package/two-real-account cycle on Mac hardware.
+
+## Linux
+
+The CLI profile store and atomic switching paths are implemented for Linux. The current desktop bundle targets Windows/macOS; close active Codex processes, then run:
 
 ```console
 codex-profile use Secondary
@@ -101,7 +110,7 @@ codex-profile desktop shortcuts
 codex-profile doctor
 ```
 
-Regenerating shortcuts refreshes the compiled Windows GUI host and installed Codex icon without touching stored accounts.
+Rebuilding or reinstalling the Tauri shell never touches stored accounts. Regenerating Windows shortcuts updates their target without touching profile data.
 
 ## Credential recovery
 

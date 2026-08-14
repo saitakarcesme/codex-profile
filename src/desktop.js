@@ -176,7 +176,7 @@ export function ensureWindowsMenuHost(env = process.env) {
   if (process.platform !== "win32") throw new Error("the Codex Profile GUI host is currently implemented for Windows");
   const root = storePaths(env).root;
   ensurePrivateDir(root);
-  const source = fileURLToPath(new URL("../assets/windows/CodexProfileHost.cs", import.meta.url));
+  const source = fileURLToPath(new URL("../legacy/windows/CodexProfileHost.cs", import.meta.url));
   const icon = windowsCodexIconPath(env);
   const digest = crypto.createHash("sha256").update(fs.readFileSync(source)).update(fs.readFileSync(icon)).digest("hex").slice(0, 12);
   const output = path.join(root, `CodexProfileHost-${digest}.exe`);
@@ -484,7 +484,7 @@ export async function switchDesktopProfile({
 export function launchWindowsMenu({ env = process.env, cliPath = process.argv[1], cwd = process.cwd(), startHidden = false } = {}) {
   if (process.platform !== "win32") throw new Error("the compact companion launcher is currently implemented for Windows");
   ensurePrivateDir(storePaths(env).root);
-  const script = fileURLToPath(new URL("../assets/windows/CodexProfileLauncher.ps1", import.meta.url));
+  const script = fileURLToPath(new URL("../legacy/windows/CodexProfileLauncher.ps1", import.meta.url));
   const gui = ensureWindowsMenuHost(env);
   const literal = (value) => `'${String(value).replaceAll("'", "''")}'`;
   const hostArguments = windowsMenuHostArguments({ script, cliPath, cwd, automation: gui.automation, startHidden });
@@ -508,6 +508,45 @@ export function launchWindowsMenu({ env = process.env, cliPath = process.argv[1]
   return { processId: child.pid, completion: Promise.resolve(0), link };
 }
 
+export function resolveDesktopShellBinary(env = process.env, platform = process.platform) {
+  const repositoryRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
+  const configured = env.CODEX_PROFILE_UI_BIN ? path.resolve(env.CODEX_PROFILE_UI_BIN) : null;
+  const candidates = platform === "win32"
+    ? [
+        configured,
+        path.join(repositoryRoot, "src-tauri", "target", "release", "codex-profile-ui.exe"),
+        path.join(repositoryRoot, "src-tauri", "target", "debug", "codex-profile-ui.exe"),
+        env.LOCALAPPDATA && path.join(env.LOCALAPPDATA, "Codex Profile", "codex-profile-ui.exe"),
+        env.ProgramFiles && path.join(env.ProgramFiles, "Codex Profile", "codex-profile-ui.exe"),
+      ]
+    : platform === "darwin"
+      ? [
+          configured,
+          path.join(repositoryRoot, "src-tauri", "target", "release", "bundle", "macos", "Codex Profile.app", "Contents", "MacOS", "codex-profile-ui"),
+          "/Applications/Codex Profile.app/Contents/MacOS/codex-profile-ui",
+          env.HOME && path.join(env.HOME, "Applications", "Codex Profile.app", "Contents", "MacOS", "codex-profile-ui"),
+        ]
+      : [configured];
+  return candidates.filter(Boolean).find((candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile()) || null;
+}
+
+export function launchDesktopMenu({ env = process.env, cliPath = process.argv[1], cwd = process.cwd(), startHidden = false, platform = process.platform } = {}) {
+  const shell = resolveDesktopShellBinary(env, platform);
+  if (!shell) {
+    if (platform === "win32") return launchWindowsMenu({ env, cliPath, cwd, startHidden });
+    throw new Error("Codex Profile Desktop UI is not installed; build or install the Tauri application first");
+  }
+  const child = spawn(shell, startHidden ? ["--hidden"] : [], {
+    cwd: path.dirname(shell),
+    env,
+    detached: true,
+    stdio: "ignore",
+    windowsHide: true,
+  });
+  child.unref();
+  return { processId: child.pid, completion: Promise.resolve(0), executable: shell };
+}
+
 function shortcutSafeName(label) {
   const clean = String(label).replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_").trim();
   return clean || "Profile";
@@ -517,10 +556,13 @@ export function installWindowsShortcuts(profiles, { env = process.env, cliPath =
   if (process.platform !== "win32") throw new Error("profile shortcuts are currently implemented for Windows");
   const payload = Buffer.from(JSON.stringify(profiles.map((profile) => ({ id: profile.id, label: profile.label })))).toString("base64");
   const encodedUtf8 = (value) => Buffer.from(String(value), "utf8").toString("base64");
-  const launcherScript = fileURLToPath(new URL("../assets/windows/CodexProfileLauncher.ps1", import.meta.url));
-  const gui = ensureWindowsMenuHost(env);
-  const menuArguments = windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: gui.automation, startHidden: false });
-  const startupArguments = windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: gui.automation, startHidden: true });
+  const shell = resolveDesktopShellBinary(env, "win32");
+  const launcherScript = fileURLToPath(new URL("../legacy/windows/CodexProfileLauncher.ps1", import.meta.url));
+  const legacy = shell ? null : ensureWindowsMenuHost(env);
+  const hostPath = shell || legacy.host;
+  const hostIcon = shell ? `${shell},0` : `${legacy.icon},0`;
+  const menuArguments = shell ? "" : windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: legacy.automation, startHidden: false });
+  const startupArguments = shell ? "--hidden" : windowsMenuHostArguments({ script: launcherScript, cliPath, cwd, automation: legacy.automation, startHidden: true });
   const script = [
     "[Console]::OutputEncoding = [Text.Encoding]::UTF8",
     `$NodePath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(process.execPath)}'))`,
@@ -528,8 +570,8 @@ export function installWindowsShortcuts(profiles, { env = process.env, cliPath =
     `$WorkingDirectory = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(path.resolve(cwd))}'))`,
     `$DesktopPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(desktopPath ? path.resolve(desktopPath) : "")}'))`,
     `$StartupPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(startupPath ? path.resolve(startupPath) : "")}'))`,
-    `$HostPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(gui.host)}'))`,
-    `$HostIcon = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(`${gui.icon},0`)}'))`,
+    `$HostPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(hostPath)}'))`,
+    `$HostIcon = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(hostIcon)}'))`,
     `$MenuArguments = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(menuArguments)}'))`,
     `$StartupArguments = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedUtf8(startupArguments)}'))`,
     `$Payload = '${payload}'`,

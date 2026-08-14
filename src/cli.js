@@ -14,7 +14,7 @@ import { readActiveAccountAndUsage } from "./app-server.js";
 import {
   desktopProcessState,
   installWindowsShortcuts,
-  launchWindowsMenu,
+  launchDesktopMenu,
   resolveDesktopWorkspace,
   switchDesktopProfile,
 } from "./desktop.js";
@@ -298,7 +298,9 @@ async function commandDesktop(args, store) {
     });
     // Keep the selector independent from the Desktop process tree and recover it
     // automatically if the previous instance exited during the close/relaunch cycle.
-    if (process.platform === "win32") launchWindowsMenu({ env: store.env, cliPath: process.argv[1], cwd: process.cwd(), startHidden: true });
+    if (process.platform === "win32" && store.env.CODEX_PROFILE_DESKTOP_SHELL !== "tauri") {
+      launchDesktopMenu({ env: store.env, cliPath: process.argv[1], cwd: process.cwd(), startHidden: true });
+    }
     process.stdout.write(`Switched to "${result.switched.target.label}" and relaunched Codex Desktop in ${result.workspace}.\n`);
     if (result.closed.forced) process.stdout.write("Codex Desktop did not close gracefully and its process tree had to be terminated.\n");
     if (result.usage) process.stdout.write(`Verified active identity: ${result.usage.email || result.usage.accountType}${result.usage.planType ? ` (${result.usage.planType})` : ""}.\n`);
@@ -308,7 +310,7 @@ async function commandDesktop(args, store) {
   }
   if (action === "menu") {
     if (args.length) throw new Error(`unexpected desktop menu argument: ${args[0]}`);
-    const launched = launchWindowsMenu({ env: store.env, cliPath: process.argv[1], cwd: process.cwd() });
+    const launched = launchDesktopMenu({ env: store.env, cliPath: process.argv[1], cwd: process.cwd() });
     process.stdout.write(`Opened Codex Profile companion launcher (${launched.processId}); it remains available in the notification area until Exit is chosen.\n`);
     const code = await launched.completion;
     if (code !== 0) throw new Error(`companion launcher exited with code ${code}`);

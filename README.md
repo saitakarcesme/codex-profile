@@ -10,7 +10,7 @@ It does not rotate accounts automatically, bypass usage limits, patch the propri
 
 ## v0.1 flow
 
-Requirements: Node.js 20+ and a current `codex` installation.
+Requirements: Node.js 20+, a current `codex` installation, and the platform prerequisites for [Tauri 2](https://v2.tauri.app/start/prerequisites/).
 
 ```console
 git clone <your-fork-url>
@@ -48,7 +48,7 @@ codex-profile run
 | `run [--profile PROFILE] [--] ...` | Launch the installed Codex CLI with the selected identity and shared home. |
 | `handoff SESSION [--profile PROFILE]` | Fork a local session under the selected account when direct server continuation is not allowed. |
 | `desktop use PROFILE [--workspace PATH] [--repair-login]` | Preflight auth, gracefully close Desktop, switch, and verify a packaged-app relaunch. Normal switching never opens a browser; `--repair-login` is an explicit opt-in for a revoked login. |
-| `desktop menu` | Open the native-feeling Windows Change Profile companion. |
+| `desktop menu` | Open the single-instance Tauri profile selector on Windows or macOS. |
 | `desktop shortcuts` | Put one-click Switch and Relaunch shortcuts for retained profiles on the Windows Desktop. |
 | `desktop status [--json]` | Show Desktop process state and the workspace that will be reopened. |
 | `desktop audit [--json]` | Inspect the last credential-free identity and shared-state verification result. |
@@ -87,9 +87,9 @@ The watchdog intentionally has no fixed retry ceiling: a transient Windows activ
 
 If Desktop shutdown itself fails or only partially completes, the same watchdog restores the existing account and workspace before the command reports the failure. The auth slot is not changed in that case.
 
-Run `codex-profile desktop shortcuts` for one-click `Codex Personal`, `Codex Secondary`, and `Codex Profile Menu` launchers. It also installs the single-instance companion in the current user's Startup folder. At Windows sign-in it starts invisibly and waits for Codex; when Codex becomes visible, only a 54 px Codex-logo button appears at the app's bottom-right. The profile selector opens only when that button or the explicit menu shortcut is chosen.
+Run `codex-profile desktop shortcuts` for one-click `Codex Personal`, `Codex Secondary`, and `Codex Profile Menu` launchers on Windows. The installed Tauri application also registers itself for per-user startup with `--hidden`, so only its tray icon remains until the user chooses a profile.
 
-The selector is a compact 690 x 350 Codex-gray window with ClearType text, Segoe UI Variable typography, protected high-resolution avatars, centered vector controls, full-title-bar dragging, smooth avatar hover scaling, and refresh. Profiles have no card backgrounds: only large circular avatars and labels remain. Additional profiles live in a hidden-scroll horizontal carousel so the window does not grow or expose a permanent scrollbar. A small compiled `CodexProfileHost.exe` owns the WPF surface, its AppUserModelID, and its embedded high-resolution Codex tray icon. PowerShell remains an in-process implementation detail: no console window, PowerShell taskbar button, or terminal process owns the UI. The companion does not cover Desktop's built-in bottom-left account area or modify the signed proprietary process. It is automatically reasserted in hidden mode after every switch.
+The selector is a lightweight Tauri 2 shell around a framework-free TypeScript/Vite frontend. Its 780 x 470 borderless surface uses native WebView rendering, the current Codex neutral-gray palette, the icon loaded at runtime from the installed Codex package, high-resolution protected avatars, centered vector controls, a custom drag region, smooth selected/hover states, and reduced-motion support. There are no profile cards, embedded screenshots, Electron runtime, terminal window, or proprietary Desktop patches. A 52 px always-on-top launcher follows the public Codex window rectangle, stays out of the taskbar, hides when Codex closes, and opens the selector when clicked. It does not read or modify Codex renderer content. The Rust bridge strips account email, credential paths, and auth material before data reaches the webview. The previous WPF/PowerShell implementation lives under `legacy/windows` only as an unpackaged fallback when a Tauri binary cannot be found.
 
 Ready-profile clicks are strictly browser-free. A card marked `Sign in required` means OpenAI rejected that retained OAuth session; clicking that exceptional state explicitly runs the supported one-time repair before switching. `Add account` also uses the supported isolated login, keeps the selector visible, reports that Chrome is waiting, and prevents a second hidden login helper from being started by repeated clicks.
 
@@ -122,14 +122,16 @@ Use `codex-profile handoff <session-id> --profile Work`. It delegates to Codex's
 - Server-owned threads cannot move between accounts. `handoff` creates a truthful local fork instead.
 - Usage is reliable only when Codex's current app-server exposes the account methods and the service returns limit data.
 - A user-initiated logout revokes that account's OAuth session server-side, including retained refresh credentials. A normal profile click then fails safely before Desktop closes and never opens Chrome. Repair requires the explicit `reauth PROFILE` command or `desktop use PROFILE --repair-login`; an email address alone cannot securely replace OAuth consent, password, or 2FA.
-- Codex Desktop exposes no supported third-party extension point for its built-in bottom-left account menu. v0.1 therefore keeps the selector in a signed-binary-independent companion/tray surface instead of injecting into proprietary assets.
-- Windows was verified against the installed Desktop/CLI versions listed in [the project log](docs/PROJECT_LOG.md). macOS and Linux path/permission behavior is covered by portable code and tests but still needs live multi-account validation.
+- Codex Desktop exposes no supported third-party extension point for its built-in bottom-left account menu. v0.1 therefore keeps the selector in a signed-binary-independent Tauri companion/tray surface instead of injecting into proprietary assets.
+- The Tauri shell, Node bridge, paths, tray, autostart, and macOS application bundle configuration are cross-platform. Windows was built and live-verified against the installed Desktop/CLI versions listed in [the project log](docs/PROJECT_LOG.md); a signed macOS build and live two-account Desktop cycle still need verification on macOS hardware.
 
 ## Development
 
 ```console
 npm test
 npm run check
+npm run ui:visual-check
+npm run tauri:build
 npm pack --dry-run
 ```
 

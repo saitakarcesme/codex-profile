@@ -8,8 +8,15 @@
     "codex-profile": "bin/codex-profile.js"
   },
   "scripts": {
-    "test": "node --test test/auth.test.js test/app-server.test.js test/codex-adapter.test.js test/config.test.js test/store.test.js test/desktop.test.js test/shared-state.test.js test/cli.e2e.test.js",
-    "check": "node --check bin/codex-profile.js && node --check src/cli.js && node --check src/store.js && node --check src/desktop.js && node --check src/app-server.js && node --check src/shared-state.js && node --check src/fs-safe.js"
+    "test": "node --test test/auth.test.js test/app-server.test.js test/codex-adapter.test.js test/config.test.js test/store.test.js test/desktop.test.js test/shared-state.test.js test/ui.test.js test/cli.e2e.test.js",
+    "check": "node --check bin/codex-profile.js && node --check src/cli.js && node --check src/store.js && node --check src/desktop.js && node --check src/app-server.js && node --check src/shared-state.js && node --check src/fs-safe.js && tsc -p ui/tsconfig.json --noEmit",
+    "ui:dev": "vite --config vite.config.ts",
+    "ui:build": "vite build --config vite.config.ts",
+    "ui:visual-check": "node scripts/visual-check.js",
+    "tauri:prepare": "node scripts/prepare-tauri-resources.js",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "engines": {
     "node": ">=20"
@@ -18,6 +25,7 @@
     "bin",
     "src",
     "assets",
+    "legacy",
     "README.md",
     "SETUP.md",
     "SECURITY.md",
@@ -29,5 +37,15 @@
     "openai",
     "profiles",
     "account-switcher"
-  ]
+  ],
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-autostart": "^2.5.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "playwright-core": "^1.62.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.2"
+  }
 }

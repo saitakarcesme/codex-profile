@@ -58,3 +58,17 @@
 - The Codex auth JSON and app-server protocols are internal compatibility surfaces even though their current implementations are open source. Keep their parsing behind adapters.
 - Live macOS/Linux multi-account validation remains outstanding; portable paths, modes, and process discovery are implemented and unit-testable.
 - Exact Desktop window/tab focus restoration remains proprietary client state; v0.1 reliably restores the project root registered for the current repository.
+
+## 2026-08-14 — Tauri desktop UI migration
+
+- Replaced the primary WPF/PowerShell selector with a Tauri 2 native shell and framework-free TypeScript/Vite frontend while leaving the profile/auth/switch transaction engine in Node.
+- Added a credential-minimizing Rust bridge. The webview receives only profile UUID, label, active/health state, and bounded avatar data; email, local avatar paths, and authentication payloads are stripped.
+- Added a 780 x 470 ambient blue selector with live layered gradients/grain, high-resolution circular avatars, a subtle selected badge, card-free Add Account action, selected-profile hover, custom title bar, reduced-motion behavior, and responsive profile wrapping.
+- Split native shell setup into Windows and macOS modules. Added tray, close-to-tray, single-instance focus, release-only hidden autostart, Windows MSI/NSIS packaging, and macOS LaunchAgent/bundle configuration.
+- Made CLI `desktop menu` and generated Windows shortcuts prefer the Tauri executable. The old WPF/PowerShell host moved to `legacy/windows` and remains only as a source-run fallback.
+- Built and opened the optimized Windows release against the real protected profile registry. Accessibility inspection found Personal, Secondary, Ibrahim Sait, and Add Account; no email or credential path reached the webview.
+- Verified one-instance behavior, close-to-tray, CLI reopen, and the `HKCU` hidden-start registration. Produced `Codex Profile_0.1.0_x64_en-US.msi` and `Codex Profile_0.1.0_x64-setup.exe`.
+- Added automated UI invariants plus headless Edge screenshots at 100%, 125%, and 150% raster scales; all three retained four centered actions with zero horizontal or vertical overflow.
+- The shared macOS source and bundle configuration compile path is in place, but a signed macOS build and live two-real-account switch still require Mac hardware.
+- Replaced the blue ambient surface with Codex's neutral gray palette and removed the hand-drawn knot. Both the title bar and launcher now resolve `chatgpt-tray-dark.ico` from the installed Codex package at runtime, so no copied proprietary logo enters the repository.
+- Added a 52 px transparent Tauri launcher that follows the public Codex window rectangle, remains absent from the taskbar, hides with Codex, and opens the selector through a native focus fallback plus webview click handler. Live Computer Use verification clicked the real-icon launcher and observed the gray selector load all three retained profiles.

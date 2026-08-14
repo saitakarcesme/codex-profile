@@ -9,6 +9,7 @@ import {
   classifyWindowsDesktopProcesses,
   ensureWindowsMenuHost,
   installWindowsShortcuts,
+  resolveDesktopShellBinary,
   launchDesktop,
   resolveDesktopWorkspace,
   switchDesktopProfile,
@@ -113,6 +114,14 @@ test("shortcut names cannot escape the Desktop directory", () => {
   assert.equal(_test.shortcutSafeName('Work:/\\*?"<>|'), "Work_________");
 });
 
+test("Desktop shell resolver honors an explicit cross-platform binary", (t) => {
+  const fixture = tempEnvironment();
+  t.after(() => fixture.cleanup());
+  const shell = path.join(fixture.root, process.platform === "win32" ? "profile.exe" : "profile");
+  fs.writeFileSync(shell, "shell");
+  assert.equal(resolveDesktopShellBinary({ ...fixture.env, CODEX_PROFILE_UI_BIN: shell }, process.platform), shell);
+});
+
 test("Windows shortcut creation produces an encoded one-click launcher", { skip: process.platform !== "win32" }, (t) => {
   const fixture = tempEnvironment();
   t.after(() => fixture.cleanup());
@@ -201,8 +210,8 @@ test("desktop use keeps browser repair opt-in", () => {
 });
 
 test("Windows companion is compact, draggable, scalable, and keeps repair explicit", () => {
-  const launcher = fs.readFileSync(path.join(import.meta.dirname, "..", "assets", "windows", "CodexProfileLauncher.ps1"), "utf8");
-  const host = fs.readFileSync(path.join(import.meta.dirname, "..", "assets", "windows", "CodexProfileHost.cs"), "utf8");
+  const launcher = fs.readFileSync(path.join(import.meta.dirname, "..", "legacy", "windows", "CodexProfileLauncher.ps1"), "utf8");
+  const host = fs.readFileSync(path.join(import.meta.dirname, "..", "legacy", "windows", "CodexProfileHost.cs"), "utf8");
   assert.match(launcher, /AllowsTransparency="False"/);
   assert.match(launcher, /TextOptions\.TextRenderingMode="ClearType"/);
   assert.match(launcher, /Width="690" Height="350"/);

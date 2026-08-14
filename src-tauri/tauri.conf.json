@@ -1,0 +1,61 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Codex Profile",
+  "version": "0.1.0",
+  "identifier": "dev.codexprofile.desktop",
+  "build": {
+    "beforeDevCommand": "npm run tauri:prepare && npm run ui:dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run tauri:prepare && npm run ui:build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Codex Profile",
+        "width": 780,
+        "height": 470,
+        "minWidth": 680,
+        "minHeight": 420,
+        "resizable": true,
+        "fullscreen": false,
+        "maximizable": false,
+        "decorations": false,
+        "transparent": false,
+        "center": true,
+        "shadow": true,
+        "skipTaskbar": true,
+        "visible": true
+      },
+      {
+        "label": "launcher",
+        "title": "Change Codex profile",
+        "url": "launcher.html",
+        "width": 58,
+        "height": 58,
+        "resizable": false,
+        "fullscreen": false,
+        "maximizable": false,
+        "minimizable": false,
+        "closable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "visible": false,
+        "focus": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "resources": ["resources/core/**/*"],
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+  }
+}
