@@ -22,7 +22,7 @@ const browser = await chromium.launch({ executablePath: edge, headless: true });
 try {
   for (const scale of [1, 1.25, 1.5]) {
     const context = await browser.newContext({
-      viewport: { width: 780, height: 470 },
+      viewport: { width: 720, height: 420 },
       deviceScaleFactor: scale,
       reducedMotion: "no-preference",
     });
