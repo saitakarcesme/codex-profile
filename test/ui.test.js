@@ -6,6 +6,7 @@ import path from "node:path";
 const uiRoot = path.join(import.meta.dirname, "..", "ui", "src");
 const tauriConfig = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "tauri.conf.json"), "utf8"));
 const tauriSource = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "lib.rs"), "utf8");
+const macInfoPlist = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "Info.plist"), "utf8");
 const bridgeSource = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "src", "bridge.rs"), "utf8");
 const cargoManifest = fs.readFileSync(path.join(import.meta.dirname, "..", "src-tauri", "Cargo.toml"), "utf8");
 const brandRoot = path.join(import.meta.dirname, "..", "assets", "brand");
@@ -50,6 +51,8 @@ test("Tauri selector keeps the requested visual and interaction invariants", () 
   assert.equal(brandPng[25], 6, "master logo must remain an RGBA PNG with transparency");
   assert.match(bridgeSource, /include_bytes!\("\.\.\/\.\.\/assets\/brand\/codex-profile-logo\.png"\)/);
   assert.match(tauriSource, /set_icon_with_as_template\(Some\(brand_icon\.clone\(\)\), cfg!\(target_os = "macos"\)\)/);
+  assert.match(tauriSource, /set_activation_policy\(tauri::ActivationPolicy::Accessory\)/);
+  assert.match(macInfoPlist, /<key>LSUIElement<\/key>\s*<true\/>/);
   assert.match(source, /class="titlebar" data-tauri-drag-region/);
   assert.doesNotMatch(source, /startDragging/);
   assert.match(source, /invoke\("switch_profile"/);

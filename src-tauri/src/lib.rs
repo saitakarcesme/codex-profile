@@ -70,6 +70,9 @@ pub fn run() {
             Some(vec!["--hidden"]),
         ))
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             app.manage(LauncherFocusGuard::default());
             app.manage(CoreBridge::discover(app.handle())?);
             desktop::configure_shell(app)?;
